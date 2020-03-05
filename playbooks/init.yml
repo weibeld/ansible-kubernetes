@@ -1,0 +1,78 @@
+- hosts: all
+  name: Install kubeadm
+  become: True
+  gather_facts: False
+  tags:
+    - install-kubeadm
+  tasks:
+    - name: Upload kubeadm install script
+      copy:
+        dest: /root
+        src: files/install-kubeadm.sh
+        mode: +x
+    - name: Run kubeadm install script
+      command: /root/install-kubeadm.sh
+      args:
+        creates: /usr/bin/kubeadm
+
+- hosts: master
+  name: Run `kubeadm init` on master nodes
+  become: True
+  gather_facts: False
+  tags:
+    - kubeadm-init
+  tasks:
+    - name: Upload `kubeadm init` config file
+      template:
+        dest: /root/kubeadm.config
+        src: templates/kubeadm.config.j2
+    - name: Run `kubeadm init`
+      command: kubeadm init --config /root/kubeadm.config
+      args:
+        creates: /etc/kubernetes/admin.conf
+      register: kubeadm_init_log
+    - name: Ensure localhost directory for `kubeadm join` scripts
+      become: False
+      local_action:
+        module: file
+        path: ../join
+        state: directory
+    - name: Download `kubeadm join` script
+      become: False
+      local_action:
+        module: copy
+        content: |
+          #!/bin/bash
+          {{ kubeadm_init_log.stdout_lines[-2] }}
+          {{ kubeadm_init_log.stdout_lines[-1] }}
+        dest: "../join/{{ inventory_hostname }}.sh"
+
+- hosts: master
+  name: Download kubeconfig files from master nodes
+  become: True
+  gather_facts: False
+  tags:
+    - download-kubeconfig
+  vars:
+    public_ip: "{{ hostvars[inventory_hostname].ansible_host }}"
+    kubeconfig_name: "{{ inventory_hostname }}.conf"
+  tasks:
+    - name: Prepare kubeconfig file
+      shell: |
+        cp /etc/kubernetes/admin.conf /root/{{ kubeconfig_name }}
+        kubectl --kubeconfig /root/{{ kubeconfig_name }} config set-cluster kubernetes --server https://{{ public_ip }}:6443
+    - name: Ensure localhost directory for kubeconfig files
+      become: False
+      local_action:
+        module: file
+        path: ../kubeconfig
+        state: directory
+    - name: Download kubeconfig file
+      fetch:
+        src: /root/{{ kubeconfig_name }}
+        dest: ../kubeconfig/
+        flat: yes
+    - name: Clean up
+      file:
+        state: absent
+        path: /root/{{ kubeconfig_name }}

@@ -1,0 +1,19 @@
+- hosts: worker
+  name: Run `kubeadm reset` on worker nodes
+  become: True
+  gather_facts: False
+  tags:
+    - reset-workers
+  tasks:
+    - name: Run `kubeadm reset`
+      command: kubeadm reset -f
+
+- hosts: master
+  name: Run `kubeadm reset` on master nodes
+  become: True
+  gather_facts: False
+  tags:
+    - reset-masters
+  tasks:
+    - name: Run `kubeadm reset`
+      command: kubeadm reset -f

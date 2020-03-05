@@ -1,0 +1,18 @@
+- hosts: worker
+  name: Join cluster
+  become: True
+  gather_facts: False
+  tasks:
+    - name: Upload `kubeadm join` script
+      copy:
+        dest: /root
+        src: ../join/{{ master }}.sh
+        mode: +x
+    - name: Run `kubeadm join` script
+      command: /root/{{ master }}.sh
+      args:
+        creates: /etc/kubernetes/kubelet.conf
+    - name: Clean up
+      file:
+        state: absent
+        path: /root/{{ master }}.sh
