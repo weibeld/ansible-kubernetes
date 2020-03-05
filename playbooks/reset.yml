@@ -21,3 +21,15 @@
       command: kubeadm reset -f
       args:
         removes: /etc/kubernetes/admin.conf
+
+- hosts: localhost
+  name: Delete the local `kubeconfig` directory
+  become: False
+  gather_facts: False
+  tags:
+    - delete-kubeconfig
+  tasks:
+    - name: Delete `kubeconfig` directory
+      file:
+        path: ../kubeconfig
+        state: absent
