@@ -3,16 +3,26 @@
   become: True
   gather_facts: False
   tasks:
-    - name: Upload `kubeadm join` script
+    - name: Create temporary file on localhost
+      become: False
+      local_action: tempfile
+      register: tmp
+    - name: Download `kubeadm join` script from master node to temporary file
+      delegate_to: "{{ master }}"
+      fetch:
+        src: /root/join.sh
+        dest: "{{ tmp.path }}"
+        flat: yes
+    - name: Upload `kubeadm join` script to worker node
       copy:
-        dest: /root
-        src: ../join/{{ master }}.sh
+        src: "{{ tmp.path }}"
+        dest: /root/join.sh
         mode: +x
-    - name: Run `kubeadm join` script
-      command: /root/{{ master }}.sh
+    - name: Run `kubeadm join` script on worker node
+      command: /root/join.sh
       args:
         creates: /etc/kubernetes/kubelet.conf
-    - name: Clean up
+    - name: Delete `kubeadm join` script on worker node
       file:
         state: absent
-        path: /root/{{ master }}.sh
+        path: /root/join.sh

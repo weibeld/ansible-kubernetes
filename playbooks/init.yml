@@ -1,5 +1,5 @@
 - hosts: all
-  name: Install kubeadm
+  name: Install kubeadm on all nodes
   become: True
   gather_facts: False
   tags:
@@ -7,13 +7,17 @@
   tasks:
     - name: Upload kubeadm install script
       copy:
-        dest: /root
         src: files/install-kubeadm.sh
+        dest: /root
         mode: +x
     - name: Run kubeadm install script
       command: /root/install-kubeadm.sh
       args:
         creates: /usr/bin/kubeadm
+    - name: Delete kubeadm install script
+      file:
+        state: absent
+        path: /root/install-kubeadm.sh
 
 - hosts: master
   name: Run `kubeadm init` on master nodes
@@ -24,28 +28,24 @@
   tasks:
     - name: Upload `kubeadm init` config file
       template:
-        dest: /root/kubeadm.config
         src: templates/kubeadm.config.j2
+        dest: /root/kubeadm.config
     - name: Run `kubeadm init`
       command: kubeadm init --config /root/kubeadm.config
       args:
         creates: /etc/kubernetes/admin.conf
-      register: kubeadm_init_log
-    - name: Ensure localhost directory for `kubeadm join` scripts
-      become: False
-      local_action:
-        module: file
-        path: ../join
-        state: directory
-    - name: Download `kubeadm join` script
-      become: False
-      local_action:
-        module: copy
+      register: kubeadm_init_out
+    - name: Create `kubeadm join` script for worker nodes
+      copy:
         content: |
           #!/bin/bash
-          {{ kubeadm_init_log.stdout_lines[-2] }}
-          {{ kubeadm_init_log.stdout_lines[-1] }}
-        dest: "../join/{{ inventory_hostname }}.sh"
+          {{ kubeadm_init_out.stdout_lines[-2] }}
+          {{ kubeadm_init_out.stdout_lines[-1] }}
+        dest: "/root/join.sh"
+    - name: Delete `kubeadm init` config file
+      file:
+        state: absent
+        path: /root/kubeadm.config
 
 - hosts: master
   name: Download kubeconfig files from master nodes
@@ -55,24 +55,24 @@
     - download-kubeconfig
   vars:
     public_ip: "{{ hostvars[inventory_hostname].ansible_host }}"
-    kubeconfig_name: "{{ inventory_hostname }}.conf"
+    kubeconfig: "{{ inventory_hostname }}.conf"
   tasks:
-    - name: Prepare kubeconfig file
+    - name: Prepare local kubeconfig file
       shell: |
-        cp /etc/kubernetes/admin.conf /root/{{ kubeconfig_name }}
-        kubectl --kubeconfig /root/{{ kubeconfig_name }} config set-cluster kubernetes --server https://{{ public_ip }}:6443
+        cp /etc/kubernetes/admin.conf /root/{{ kubeconfig }}
+        kubectl --kubeconfig /root/{{ kubeconfig }} config set-cluster kubernetes --server https://{{ public_ip }}:6443
     - name: Ensure localhost directory for kubeconfig files
       become: False
       local_action:
         module: file
         path: ../kubeconfig
         state: directory
-    - name: Download kubeconfig file
+    - name: Download local kubeconfig file
       fetch:
-        src: /root/{{ kubeconfig_name }}
+        src: /root/{{ kubeconfig }}
         dest: ../kubeconfig/
         flat: yes
-    - name: Clean up
+    - name: Delete local kubeconfig file
       file:
         state: absent
-        path: /root/{{ kubeconfig_name }}
+        path: /root/{{ kubeconfig }}
