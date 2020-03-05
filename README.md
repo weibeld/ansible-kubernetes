@@ -4,7 +4,7 @@ Ansible playbooks for creating multiple Kubernetes clusters with kubeadm.
 
 ## Description
 
-These playbooks allow you to create multiple Kubernetes clusters simultanesouly.
+These playbooks allow you to create multiple Kubernetes clusters simultaneously.
 
 In particular, you can create any number of clusters with a single master node and any number of worker nodes.
 
@@ -41,7 +41,7 @@ k8s-worker-2 master=k8s-master
 Note the following things:
 
 - Each node must have the `ansible_host` variable containing a publicly accessible IP address of the node
-- Each worker node must have a `master` variable containig the name of its master node
+- Each worker node must have a `master` variable containing the name of its master node
 
 For defining multiple clusters, just add additional nodes with appropriate variables to the `[all]`, `[master]`, and `[worker]` groups (see example usage below).
 
@@ -97,7 +97,7 @@ Run `kubeadm init` on the master nodes:
 ansible-playbook playbooks/init.yml
 ```
 
-This installs the Kubernetes control plane componets on the master nodes and puts a kubeconfig file for each cluster in the `kubeconfig` directory in your current working directory.
+This installs the Kubernetes control plane components on the master nodes and puts a kubeconfig file for each cluster in the `kubeconfig` directory in your current working directory.
 
 You can now already access your clusters with kubectl as follows:
 
@@ -113,8 +113,7 @@ This should output a single node (the master node) in the `NotReady` state.
 
 At this point, you [should install a CNI plugin](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network) in your clusters.
 
-For example, you can install [Cilium](kubectl create -f https://raw.githubusercontent.com/cilium/cilium/1.7.0/install/kubernetes/quick-install.yaml
-) in the `foo` cluster with:
+For example, you can install [Cilium](https://cilium.readthedocs.io/en/stable/gettingstarted/k8s-install-default/) in the `foo` cluster with:
 
 ```bash
 kubectl --kubeconfig kubeconfig/master-foo.conf \
