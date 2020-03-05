@@ -7,6 +7,8 @@
   tasks:
     - name: Run `kubeadm reset`
       command: kubeadm reset -f
+      args:
+        removes: /etc/kubernetes/kubelet.conf
 
 - hosts: master
   name: Run `kubeadm reset` on master nodes
@@ -17,3 +19,5 @@
   tasks:
     - name: Run `kubeadm reset`
       command: kubeadm reset -f
+      args:
+        removes: /etc/kubernetes/admin.conf

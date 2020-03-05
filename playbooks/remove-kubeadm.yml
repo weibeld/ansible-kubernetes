@@ -1,0 +1,9 @@
+- hosts: all
+  name: Remove kubeadm from all nodes
+  become: True
+  gather_facts: False
+  tasks:
+    - name: Remove kubeadm
+      apt:
+        name: kubeadm
+        state: absent

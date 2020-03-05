@@ -1,24 +1,3 @@
-- hosts: all
-  name: Install kubeadm on all nodes
-  become: True
-  gather_facts: False
-  tags:
-    - install-kubeadm
-  tasks:
-    - name: Upload kubeadm install script
-      copy:
-        src: files/install-kubeadm.sh
-        dest: /root
-        mode: +x
-    - name: Run kubeadm install script
-      command: /root/install-kubeadm.sh
-      args:
-        creates: /usr/bin/kubeadm
-    - name: Delete kubeadm install script
-      file:
-        state: absent
-        path: /root/install-kubeadm.sh
-
 - hosts: master
   name: Run `kubeadm init` on master nodes
   become: True
