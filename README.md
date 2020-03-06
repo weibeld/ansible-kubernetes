@@ -148,7 +148,11 @@ If you want to start over with the installation of Kubernetes, you can run `kube
 ansible-playbook playbooks/reset.yml
 ```
 
-This uninstalls all Kubernetes components from your nodes. You can now do a fresh install of Kubernetes with the `init.yml` and `join.yml` playbooks.
+This uninstalls all Kubernetes components from your nodes. It also removes the `kubeconfig` folder in the current working directory of your local machine.
+
+You can now do a fresh install of Kubernetes with the `init.yml` and `join.yml` playbooks as shown above.
+
+> **Caution:** the `reset.yml` playbook does **not** revert any OS-level settings made by any Kubernetes components on the nodes, such as iptables rules. This may cause issues if you reinstall Kubernetes on the same nodes. To be sure that you start with a clean slate, it's best to delete and recreate the infrastructure.
 
 If you want to uninstall kubeadm on all the nodes, you can use:
 
