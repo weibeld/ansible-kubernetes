@@ -3,5 +3,5 @@ kind: ClusterConfiguration
 apiServer:
   certSANs:
     - {{ hostvars[inventory_hostname].ansible_host }}
-#networking:
-#  podSubnet:  10.244.0.0/16
+networking:
+  podSubnet:  10.1.0.0/16
